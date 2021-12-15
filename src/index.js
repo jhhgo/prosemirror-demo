@@ -1,18 +1,48 @@
-import { schema } from 'prosemirror-schema-basic'
-import { EditorState } from 'prosemirror-state'
-import { EditorView } from 'prosemirror-view'
-import { undo, redo, history } from 'prosemirror-history'
-import { keymap } from 'prosemirror-keymap'
-import { baseKeymap } from 'prosemirror-commands'
-import { DOMParser } from 'prosemirror-model'
+// schema规定哪些元素能包含哪些元素不能包含
+import { EditorState } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+// import { sc } from "prosemirror-schema-basic";
+import { history, redo, undo } from "prosemirror-history";
+import { keymap } from "prosemirror-keymap";
+import { baseKeymap } from "prosemirror-commands";
+import { Schema, Slice, DOMParser } from "prosemirror-model";
+import { ReplaceStep  } from 'prosemirror-transform';
+import { schema } from 'prosemirror-schema-basic';
 
-const content = document.querySelector('#content')
+
+const pDOM = ["p", 0];
+
+const schema1 = new Schema({
+	nodes: {
+		doc: {
+			content: "block+",
+		},
+		paragraph: {
+			content: "text*",
+			group: 'block',
+			parseDOM: [{ tag: "p" }],
+			toDOM() {
+				return pDOM;
+			},
+		},
+		blockquote: {group: "block", content: "block+"},
+		text: { inline: true },
+		/* ... and so on */
+	},
+});
+
+const content = document.querySelector('#content');
+
 const state = EditorState.create({
-  doc: DOMParser.fromSchema(schema).parse(content)
-})
-console.log('initial state', state)
-const view = new EditorView(document.body, {state, dispatchTransaction(transaction) {
-  let newState = view.state.apply(transaction)
-  console.log('newState', newState)
-  view.updateState(newState)
-}})
+	doc: DOMParser.fromSchema(schema1).parse(content)
+});
+console.log('state1', state);
+const step = new ReplaceStep(3, 5, Slice.empty);
+const result = step.apply(state.doc);
+console.log('result', result);
+
+const view = new EditorView(document.querySelector('#editor'), {
+	state
+});
+
+window.view = view;
